@@ -25,7 +25,7 @@ ALTER SYSTEM SET
 ALTER SYSTEM SET
  max_wal_size = '4GB';
 ALTER SYSTEM SET 
- fsync = 'off'
+ fsync = 'off';
 ALTER SYSTEM SET
  full_page_writes = 'off';
 

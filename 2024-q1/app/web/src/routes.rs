@@ -1,3 +1,5 @@
+use std::env;
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -5,7 +7,7 @@ use axum::{
     Json,
 };
 
-use deadpool_postgres::GenericClient;
+use tokio_postgres::GenericClient;
 
 use crate::{
     db::{FuncError, PostgressPoolConnection},
@@ -46,7 +48,6 @@ pub async fn get_client_statement(
     State(pool): State<PostgressPoolConnection>,
 ) -> Result<impl IntoResponse, AppError> {
     let conn = pool.get().await.unwrap();
-
     let result = conn
         .query_one(
             "SELECT get_client_balance_and_transactions FROM get_client_balance_and_transactions($1::smallint)",
@@ -56,11 +57,6 @@ pub async fn get_client_statement(
         .unwrap();
 
     let response = result.get::<_, serde_json::Value>(0);
-
-    // match response.error.as_str() {
-    //     "client_not_found" => return Err(AppError::ClientNotFound),
-    //     _ => {}
-    // }
 
     // // TODO: Refactor
     match response.get("error") {

@@ -15,6 +15,8 @@ pub mod routes;
 #[tokio::main]
 async fn main() {
     // tracing_subscriber::fmt::init();
+    // console_subscriber::init();
+
 
     let host = Ipv4Addr::new(0, 0, 0, 0);
     let port = env::var("PORT").unwrap_or("8080".to_owned());
