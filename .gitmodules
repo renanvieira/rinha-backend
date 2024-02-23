@@ -1,0 +1,3 @@
+[submodule "2024-q1/rinha-load-tests"]
+	path = 2024-q1/rinha-load-tests
+	url = https://github.com/zanfranceschi/rinha-de-backend-2024-q1
