@@ -24,8 +24,8 @@ services:
     environment:
       PORT: 8080
       DB_HOST: db
-      DB_PORT: 6432
-      PG__POOL__MAX_SIZE: 175
+      DB_PORT: 5432
+      PG__POOL__MAX_SIZE: 250
       PG__POOL__TIMEOUTS__WAIT__SECS: 2
     deploy:
       resources:
@@ -41,8 +41,9 @@ services:
     environment:
       PORT: 8080
       DB_HOST: db
-      DB_PORT: 6432
-      PG__POOL__MAX_SIZE: 175
+      DB_PORT: 5432
+      PG__POOL__MAX_SIZE: 250
+      PG__POOL__TIMEOUTS__WAIT__SECS: 2
     deploy:
       resources:
         limits:
@@ -57,6 +58,7 @@ services:
       - type: tmpfs
         target: /var/lib/postgresql/data
     environment:
+       
       POSTGRES_PASSWORD: 123
       POSTGRES_DB: rinha
     healthcheck: 
