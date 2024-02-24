@@ -1,0 +1,86 @@
+version: '3'
+services:
+  lb:
+    image: haproxy:2.9-alpine
+    ports:
+      - 9999:9999
+      - 9994:9994
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - app01
+      - app02
+    deploy:
+      resources:
+        limits:
+          memory: 120MB
+          cpus: "0.4"
+  app01:
+    build: 
+      context: web_thread/
+      target: app
+    ports:
+      - 8081:8080
+    environment:
+      PORT: 8080
+      DB_URL: postgres://postgres:123@db_proxy:6432/rinha
+      DB_DSN: host=db_proxy port=6432 user=postgres password=123 dbname=rinha
+      R2D2_MAX_POOL_SIZE: 50
+    deploy:
+      resources:
+        limits:
+          memory: 10MB
+          cpus: "0.3"
+  app02:
+    build: 
+      context: web_thread/
+      target: app
+    ports:
+      - 8082:8080
+    environment:
+      PORT: 8080
+      DB_URL: postgres://postgres:123@db_proxy:6432/rinha
+      DB_DSN: host=db_proxy port=6432 user=postgres password=123 dbname=rinha
+      R2D2_MAX_POOL_SIZE: 50
+    deploy:
+      resources:
+        limits:
+          memory: 10MB
+          cpus: "0.3"
+  db_proxy: 
+    image: bitnami/pgbouncer:latest
+    ports:
+      - 6432:6432
+    environment:
+      - POSTGRESQL_HOST=db
+      - POSTGRESQL_PASSWORD=123
+      - PGBOUNCER_DATABASE=rinha
+    volumes:
+      - ./pgbouncer_conf/:/bitnami/pgbouncer/conf
+    deploy:
+      resources:
+        limits:
+          memory: 100MB
+          cpus: '0.3'
+  db:
+    image: postgres:16-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ./init_postgres_scripts:/docker-entrypoint-initdb.d/
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+    environment:
+       
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: rinha
+    healthcheck: 
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 300MB
+          cpus: '0.5'
