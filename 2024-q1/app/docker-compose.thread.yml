@@ -7,9 +7,6 @@ services:
       - 9994:9994
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    depends_on:
-      - app01
-      - app02
     deploy:
       resources:
         limits:
@@ -25,12 +22,20 @@ services:
       PORT: 8080
       DB_URL: postgres://postgres:123@db_proxy:6432/rinha
       DB_DSN: host=db_proxy port=6432 user=postgres password=123 dbname=rinha
-      R2D2_MAX_POOL_SIZE: 50
+      R2D2_MAX_POOL_SIZE: 100
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
     deploy:
       resources:
         limits:
-          memory: 10MB
-          cpus: "0.3"
+          memory: 15MB
+          cpus: "0.5"
   app02:
     build: 
       context: web_thread/
@@ -41,12 +46,20 @@ services:
       PORT: 8080
       DB_URL: postgres://postgres:123@db_proxy:6432/rinha
       DB_DSN: host=db_proxy port=6432 user=postgres password=123 dbname=rinha
-      R2D2_MAX_POOL_SIZE: 50
+      R2D2_MAX_POOL_SIZE: 100
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
     deploy:
       resources:
         limits:
-          memory: 10MB
-          cpus: "0.3"
+          memory: 15MB
+          cpus: "0.5"
   db_proxy: 
     image: bitnami/pgbouncer:latest
     ports:
@@ -57,6 +70,9 @@ services:
       - PGBOUNCER_DATABASE=rinha
     volumes:
       - ./pgbouncer_conf/:/bitnami/pgbouncer/conf
+    depends_on:
+      db:
+        condition: service_healthy
     deploy:
       resources:
         limits:

@@ -13,17 +13,15 @@ DECLARE
     v_account_limit INTEGER;
     v_partition_name VARCHAR;
 BEGIN
-
-    v_partition_name := 'dbapi.ledger_client_id_' || p_client_id;
-
-    EXECUTE 'LOCK TABLE ' || v_partition_name || ' IN ROW EXCLUSIVE MODE';
-    
     v_account_limit := (SELECT balance_limit FROM dbapi.clients WHERE id = p_client_id);
 
     IF v_account_limit IS NULL THEN
         RETURN JSONB_BUILD_OBJECT('error','client_not_found');
     END IF;
 
+    v_partition_name := 'dbapi.ledger_client_id_' || p_client_id;
+
+    EXECUTE 'LOCK TABLE ' || v_partition_name || ' IN ROW EXCLUSIVE MODE';
 
     -- Get the latest balance for the client from the last transaction
     SELECT balance INTO v_latest_balance

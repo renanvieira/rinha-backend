@@ -1,7 +1,7 @@
 FROM rust:1.76-alpine as build
 
 WORKDIR /usr/src/app
-RUN apk add --no-cache musl-dev
+RUN apk add --no-cache musl-dev curl
 
 COPY . .
 RUN cargo install --path .

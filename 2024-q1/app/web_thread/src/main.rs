@@ -1,4 +1,4 @@
-use std::{env, sync::Arc};
+use std::{env, sync::Arc, time::Duration};
 
 use postgres::{Client, NoTls};
 use r2d2::Pool;
@@ -24,10 +24,16 @@ fn main() {
     let thread_pool = ScheduledThreadPool::new(10);
 
     let pool_manager = PostgresConnectionManager::new(db_dsn.parse().unwrap(), NoTls);
+
+    let start = std::time::Instant::now();
     let pool_result = Pool::builder()
         .thread_pool(Arc::new(thread_pool))
+        .connection_timeout(Duration::from_secs(120))
         .max_size(pool_size)
         .build(pool_manager);
+    let end = std::time::Instant::now();
+
+    println!("Pool initialized: {:?}", end - start);
 
     let pool = match pool_result {
         Ok(p) => p,
@@ -36,6 +42,9 @@ fn main() {
 
     rouille::start_server_with_pool(format!("{}:{}", host, port), None, move |request| {
         let result = router!(request,
+            (GET) (/healthcheck) => {
+                Response::text("OK")
+            },
             (GET) (/clientes/{id:i16}/extrato) => {
 
                 let result = {
@@ -57,6 +66,7 @@ fn main() {
                     },
                     None => {},
                 }
+
 
                 Response::json(&result_row)
             },
@@ -116,7 +126,7 @@ fn main() {
                         "not_enough_limit" | "invalid_operation" => return Response::text("Invalid Request").with_status_code( 422),
                         _ => {}
                     },
-                    None => todo!(),
+                    None => {},
                 },
                 None => {},
             }
