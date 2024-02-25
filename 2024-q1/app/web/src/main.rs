@@ -39,6 +39,7 @@ async fn main() {
         .create_pool(Some(Runtime::Tokio1), NoTls)
         .unwrap();
 
+
     let router = Router::new()
         .route("/clientes/:id/extrato", get(routes::get_client_statement))
         .route("/clientes/:id/transacoes", post(routes::create_transaction))

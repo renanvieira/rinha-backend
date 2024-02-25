@@ -4,7 +4,6 @@ services:
     image: haproxy:2.9-alpine
     ports:
       - 9999:9999
-      - 9994:9994
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
@@ -26,11 +25,10 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       PG__POOL__MAX_SIZE: 250
-      PG__POOL__TIMEOUTS__WAIT__SECS: 2
     deploy:
       resources:
         limits:
-          memory: 10MB
+          memory: 15MB
           cpus: "0.3"
   app02:
     build: 
@@ -43,7 +41,6 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       PG__POOL__MAX_SIZE: 250
-      PG__POOL__TIMEOUTS__WAIT__SECS: 2
     deploy:
       resources:
         limits:

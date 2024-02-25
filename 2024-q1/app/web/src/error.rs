@@ -3,6 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use postgres_types::{FromSql, Type};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -20,6 +21,7 @@ impl ErrorResponse {
 pub enum AppError {
     ClientNotFound,
     TransactionInvalid,
+    InternalError,
 }
 
 impl IntoResponse for AppError {
@@ -33,6 +35,11 @@ impl IntoResponse for AppError {
             AppError::TransactionInvalid => (
                 StatusCode::UNPROCESSABLE_ENTITY,
                 Json(ErrorResponse::new("Transacao invalida".to_owned())),
+            )
+                .into_response(),
+            AppError::InternalError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Error".to_owned(),
             )
                 .into_response(),
         }

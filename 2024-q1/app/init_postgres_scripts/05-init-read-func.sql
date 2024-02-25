@@ -17,9 +17,8 @@ BEGIN
         RETURN JSONB_BUILD_OBJECT('error', 'client_not_found');
     END IF;
 
-
-    --v_partition_name := 'dbapi.ledger_client_id_' || client_id_param;
-    --EXECUTE 'LOCK TABLE ' || v_partition_name || ' IN ROW EXCLUSIVE MODE';
+    v_partition_name := 'dbapi.ledger_client_id_' || client_id_param;
+    EXECUTE 'LOCK TABLE ' || v_partition_name || ' IN EXCLUSIVE MODE';
 
     -- Get the latest balance for the client from the last transaction
     SELECT balance INTO v_latest_balance

@@ -14,8 +14,8 @@ WORKDIR /usr/app
 RUN apk add --no-cache musl-dev
 COPY . .
 
-RUN RUSTFLAGS="--cfg tokio_unstable" cargo install --path .
-RUN RUSTFLAGS="--cfg tokio_unstable" cargo install --locked tokio-console
+RUN cargo install --path .
+RUN cargo install --locked tokio-console
 
 CMD ["/usr/app/target/release/web"]
 
