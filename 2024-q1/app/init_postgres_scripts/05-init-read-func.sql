@@ -3,19 +3,22 @@ RETURNS JSONB
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_client_exists BOOLEAN;
     v_latest_balance_record JSONB;
     v_transactions_record JSONB;
     v_limit INT;
     v_latest_balance INT;
+    v_partition_name VARCHAR;
 BEGIN
-    -- Check if the client exists
-    SELECT EXISTS(SELECT 1 FROM dbapi.clients WHERE id = client_id_param) INTO v_client_exists;
+    -- Get the client's limit from the clients table
+    v_limit = (SELECT balance_limit FROM dbapi.clients WHERE id = client_id_param);
     
-    IF NOT v_client_exists THEN
+    IF v_limit IS NULL THEN
         -- Return a JSON object indicating the client does not exist
         RETURN JSONB_BUILD_OBJECT('error', 'client_not_found');
     END IF;
+
+    v_partition_name := 'dbapi.ledger_client_id_' || client_id_param;
+    EXECUTE 'LOCK TABLE ' || v_partition_name || ' IN EXCLUSIVE MODE';
 
     -- Get the latest balance for the client from the last transaction
     SELECT balance INTO v_latest_balance
@@ -27,9 +30,6 @@ BEGIN
     IF v_latest_balance IS NULL THEN
         v_latest_balance := 0;
     END IF;
-
-    -- Get the client's limit from the clients table
-    SELECT balance_limit INTO v_limit FROM dbapi.clients WHERE id = client_id_param;
 
     -- Get the last few transactions for the client
     SELECT JSONB_AGG(sub.transaction ORDER BY sub.created_at DESC) INTO v_transactions_record

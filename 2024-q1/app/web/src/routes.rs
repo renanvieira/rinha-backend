@@ -1,3 +1,5 @@
+use std::env;
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -5,7 +7,7 @@ use axum::{
     Json,
 };
 
-use deadpool_postgres::GenericClient;
+use tokio_postgres::{GenericClient, NoTls};
 
 use crate::{
     db::{FuncError, PostgressPoolConnection},
@@ -45,9 +47,18 @@ pub async fn get_client_statement(
     Path(id): Path<i16>,
     State(pool): State<PostgressPoolConnection>,
 ) -> Result<impl IntoResponse, AppError> {
-    let conn = pool.get().await.unwrap();
+    // let conn = pool.get().await.unwrap();
+    let (client, connection) = tokio_postgres::connect(&env::var("DB_DSN").unwrap(), NoTls)
+        .await
+        .unwrap();
 
-    let result = conn
+    tokio::task::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("COnnection error: {}", e);
+        }
+    });
+
+    let result = client
         .query_one(
             "SELECT get_client_balance_and_transactions FROM get_client_balance_and_transactions($1::smallint)",
             &[&id],
@@ -57,21 +68,11 @@ pub async fn get_client_statement(
 
     let response = result.get::<_, serde_json::Value>(0);
 
-    // match response.error.as_str() {
-    //     "client_not_found" => return Err(AppError::ClientNotFound),
-    //     _ => {}
-    // }
-
-    // // TODO: Refactor
-    match response.get("error") {
-        Some(err) => match err.as_str() {
-            Some(err_str) => match err_str {
-                "client_not_found" => return Err(AppError::ClientNotFound),
-                _ => {}
-            },
-            None => {}
-        },
-        None => {}
+    if let Some(err) = response.get("error").and_then(|e| e.as_str()) {
+        return match err {
+            "client_not_found" => Err(AppError::ClientNotFound),
+            _ => Err(AppError::ClientNotFound),
+        };
     }
 
     Ok((StatusCode::OK, Json(response)))
@@ -90,9 +91,19 @@ pub async fn create_transaction(
         return Err(AppError::TransactionInvalid);
     }
 
-    let conn = pool.get().await.unwrap();
+    // let conn = pool.get().await.unwrap();
 
-    let result = conn
+    let (client, connection) = tokio_postgres::connect(&env::var("DB_DSN").unwrap(), NoTls)
+        .await
+        .unwrap();
+
+    tokio::task::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("COnnection error: {}", e);
+        }
+    });
+
+    let result = client
         .query_one(
             "SELECT insert_transaction($1::SMALLINT, $2::INTEGER, $3::CHAR, $4::VARCHAR)",
             &[
@@ -107,19 +118,12 @@ pub async fn create_transaction(
 
     let response = result.get::<_, serde_json::Value>(0);
 
-    // TODO: Refactor
-    match response.get("error") {
-        Some(err) => match err.as_str() {
-            Some(err_str) => match err_str {
-                "client_not_found" => return Err(AppError::ClientNotFound),
-                "not_enough_limit" | "invalid_operation" => {
-                    return Err(AppError::TransactionInvalid);
-                }
-                _ => {}
-            },
-            None => {}
-        },
-        None => {}
+    if let Some(err) = response.get("error").and_then(|e| e.as_str()) {
+        return match err {
+            "client_not_found" => Err(AppError::ClientNotFound),
+            "not_enough_limit" | "invalid_operation" => Err(AppError::TransactionInvalid),
+            _ => Err(AppError::TransactionInvalid),
+        };
     }
 
     Ok((StatusCode::OK, Json(response)))

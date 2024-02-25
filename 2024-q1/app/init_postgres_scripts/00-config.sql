@@ -1,5 +1,5 @@
 ALTER SYSTEM SET
- max_connections = '350';
+ max_connections = '500';
 ALTER SYSTEM SET
  shared_buffers = '75MB';
 ALTER SYSTEM SET
@@ -24,8 +24,3 @@ ALTER SYSTEM SET
  min_wal_size = '1GB';
 ALTER SYSTEM SET
  max_wal_size = '4GB';
-ALTER SYSTEM SET 
- fsync = 'off'
-ALTER SYSTEM SET
- full_page_writes = 'off';
-
